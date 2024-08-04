@@ -7,7 +7,7 @@ namespace ED.UI
     {
         object DefaultViewKey { get; }
         UIOptions DefaultOptions { get; }
-        TViewModel ViewModel { get; }
+        TViewModel model { get; }
         void OnBind();
     }
 }

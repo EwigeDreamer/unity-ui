@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ED.UI
 {
-    public interface IUIViewPool
+    public interface IUIViewPool : IDisposable
     {
         UniTask<(IDisposable handler, GameObject view)> Get(object key);
     }

@@ -14,40 +14,43 @@ namespace ED.UI
         private readonly IUIViewPool _pool;
         private readonly IUIViewRoot _root;
 
+        private readonly Dictionary<object, object> _keys = new();
         private readonly Dictionary<object, GameObject> _views = new();
-        private readonly Dictionary<object, Action> _disposings = new();
+        private readonly Dictionary<object, IDisposable> _disposables = new();
         private readonly Dictionary<object, UIOptions> _options = new();
         private readonly Dictionary<object, bool> _states = new();
-        private readonly Dictionary<object, List<IUIModel<IUIViewModel>>> _children = new();
-        private readonly HashSet<object> _models = new();
-        private readonly StackList<object> _stack = new();
+        private readonly Dictionary<object, List<IUIModel<IUIViewModel>>> _childrens = new();
+        private readonly Dictionary<object, IUIModel<IUIViewModel>> _roots = new();
+        private readonly HashSet<IUIModel<IUIViewModel>> _models = new();
+        private readonly StackList<IUIModel<IUIViewModel>> _stack = new();
         
-        protected UIService(IUIModelPreprocessor preprocessor, IUIViewPool pool, IUIViewRoot root)
+        public event Action<bool> OnTransitionStateChanged;
+        
+        public UIService(IUIModelPreprocessor preprocessor, IUIViewPool pool, IUIViewRoot root)
         {
             _preprocessor = preprocessor;
             _pool = pool;
             _root = root;
         }
 
-        public void Open<T>(UIOptions? options = null) where T : IUIModel<IUIViewModel>, new() => Open(new T());
-        public void Open<T>(T model, UIOptions? options = null) where T : IUIModel<IUIViewModel> => Open(model, model.DefaultViewKey);
-        public void Open<T>(object viewKey, UIOptions? options = null) where T : IUIModel<IUIViewModel>, new() => Open(new T(), viewKey);
-        public void Open<T>(T model, object viewKey, UIOptions? options = null) where T : IUIModel<IUIViewModel> => OpenAsync(model, viewKey).Forget();
-        public UniTask<T> OpenAsync<T>(UIOptions? options = null) where T : IUIModel<IUIViewModel>, new() => OpenAsync(new T());
-        public UniTask<T> OpenAsync<T>(T model, UIOptions? options = null) where T : IUIModel<IUIViewModel> => OpenAsync(model, model.DefaultViewKey);
-        public UniTask<T> OpenAsync<T>(object viewKey, UIOptions? options = null) where T : IUIModel<IUIViewModel>, new() => OpenAsync(new T(), viewKey);
+        public void Open<T>(UIOptions? options = null) where T : IUIModel<IUIViewModel>, new() => Open(new T(), options);
+        public void Open<T>(T model, UIOptions? options = null) where T : IUIModel<IUIViewModel> => Open(model, model.DefaultViewKey, options);
+        public void Open<T>(object viewKey, UIOptions? options = null) where T : IUIModel<IUIViewModel>, new() => Open(new T(), viewKey, options);
+        public void Open<T>(T model, object viewKey, UIOptions? options = null) where T : IUIModel<IUIViewModel> => OpenAsync(model, viewKey, options).Forget();
+        public UniTask<T> OpenAsync<T>(UIOptions? options = null) where T : IUIModel<IUIViewModel>, new() => OpenAsync(new T(), options);
+        public UniTask<T> OpenAsync<T>(T model, UIOptions? options = null) where T : IUIModel<IUIViewModel> => OpenAsync(model, model.DefaultViewKey, options);
+        public UniTask<T> OpenAsync<T>(object viewKey, UIOptions? options = null) where T : IUIModel<IUIViewModel>, new() => OpenAsync(new T(), viewKey, options);
 
         public async UniTask<T> OpenAsync<T>(T model, object viewKey, UIOptions? options = null) where T : IUIModel<IUIViewModel>
         {
             if (model == null) throw new ArgumentNullException(nameof(model));
-            if (_stack.Contains(model)) throw new InvalidOperationException($"{typeof(T).Name} is already open!");
-            if (viewKey == null) throw new ArgumentNullException(nameof(viewKey));
+            if (_models.Contains(model)) throw new InvalidOperationException($"{typeof(T).Name} is already exist!");
             
-            _preprocessor.Preprocess(model);
+            _preprocessor?.Preprocess(model);
 
             var prev = _stack.Count > 0 ? _stack.Peek() : null;
-            var (view, dispose) = await PrepareView(model, viewKey, _root.Container);
-            Register(model, view, dispose, options);
+            var (view, disposable) = await PrepareView(model, viewKey, _root.Container);
+            Register(model, view, viewKey, disposable, options);
             _stack.Push(model);
             await Transite(prev, model);
             
@@ -59,9 +62,9 @@ namespace ED.UI
         public async UniTask CloseAsync<T>(T model) where T : IUIModel<IUIViewModel>
         {
             if (model == null) throw new ArgumentNullException(nameof(model));
-            if (!_stack.Contains(model)) throw new InvalidOperationException($"{typeof(T).Name} is not open!");
+            if (!_models.Contains(model)) throw new InvalidOperationException($"{typeof(T).Name} is not found!");
 
-            object next = null;
+            IUIModel<IUIViewModel> next = null;
             if (object.ReferenceEquals(_stack.Peek(), model))
             {
                 _stack.Pop();
@@ -74,49 +77,60 @@ namespace ED.UI
             
             await Transite(model, next);
             await CloseChildren(model);
-            _disposings[model]?.Invoke();
+            _disposables[model].Dispose();
             Unregister(model);
         }
 
         private UniTask CloseChildren<T>(T model) where T : IUIModel<IUIViewModel>
         {
-            if (!_children.TryGetValue(model, out var children)) return UniTask.CompletedTask;
+            if (!_childrens.TryGetValue(model, out var children)) return UniTask.CompletedTask;
             using var tasksHandler = ListPool<UniTask>.Get(out var tasks);
             foreach(var child in children) tasks.Add(CloseWidgetAsync(child));
             return UniTask.WhenAll(tasks);
         }
 
-        public void OpenWidget<T>(IUIViewRoot parent) where T : IUIModel<IUIViewModel>, new() => OpenWidget(new T(), parent);
-        public void OpenWidget<T>(T model, IUIViewRoot parent) where T : IUIModel<IUIViewModel> => OpenWidget(model, model.DefaultViewKey, parent);
-        public void OpenWidget<T>(object viewKey, IUIViewRoot parent) where T : IUIModel<IUIViewModel>, new() => OpenWidget(new T(), viewKey, parent);
-        public void OpenWidget<T>(T model, object viewKey, IUIViewRoot parent) where T : IUIModel<IUIViewModel> => OpenWidgetAsync(model, viewKey, parent).Forget();
-        public UniTask<T> OpenWidgetAsync<T>(IUIViewRoot parent) where T : IUIModel<IUIViewModel>, new() => OpenWidgetAsync(new T(), parent);
-        public UniTask<T> OpenWidgetAsync<T>(T model, IUIViewRoot parent) where T : IUIModel<IUIViewModel> => OpenWidgetAsync(model, model.DefaultViewKey, parent);
-        public UniTask<T> OpenWidgetAsync<T>(object viewKey, IUIViewRoot parent) where T : IUIModel<IUIViewModel>, new() => OpenWidgetAsync(new T(), viewKey, parent);
-        public async UniTask<T> OpenWidgetAsync<T>(T model, object viewKey, IUIViewRoot parent) where T : IUIModel<IUIViewModel>
+        public void OpenWidget<TWidget, TRoot>(TRoot root, IUIViewRoot parent, UIOptions? options = null) where TWidget : IUIModel<IUIViewModel>, new() where TRoot : IUIModel<IUIViewModel> => OpenWidget(new TWidget(), root, parent, options);
+        public void OpenWidget<TWidget, TRoot>(TWidget model, TRoot root, IUIViewRoot parent, UIOptions? options = null) where TWidget : IUIModel<IUIViewModel> where TRoot : IUIModel<IUIViewModel> => OpenWidget(model, root, model.DefaultViewKey, parent, options);
+        public void OpenWidget<TWidget, TRoot>(TRoot root, object viewKey, IUIViewRoot parent, UIOptions? options = null) where TWidget : IUIModel<IUIViewModel>, new() where TRoot : IUIModel<IUIViewModel> => OpenWidget(new TWidget(), root, viewKey, parent, options);
+        public void OpenWidget<TWidget, TRoot>(TWidget model, TRoot root, object viewKey, IUIViewRoot parent, UIOptions? options = null) where TWidget : IUIModel<IUIViewModel> where TRoot : IUIModel<IUIViewModel> => OpenWidgetAsync(model, root, viewKey, parent, options).Forget();
+        public UniTask<TWidget> OpenWidgetAsync<TWidget, TRoot>(TRoot root, IUIViewRoot parent, UIOptions? options = null) where TWidget : IUIModel<IUIViewModel>, new() where TRoot : IUIModel<IUIViewModel> => OpenWidgetAsync(new TWidget(), root, parent, options);
+        public UniTask<TWidget> OpenWidgetAsync<TWidget, TRoot>(TWidget model, TRoot root, IUIViewRoot parent, UIOptions? options = null) where TWidget : IUIModel<IUIViewModel> where TRoot : IUIModel<IUIViewModel> => OpenWidgetAsync(model, root, model.DefaultViewKey, parent, options);
+        public UniTask<TWidget> OpenWidgetAsync<TWidget, TRoot>(TRoot root, object viewKey, IUIViewRoot parent, UIOptions? options = null) where TWidget : IUIModel<IUIViewModel>, new() where TRoot : IUIModel<IUIViewModel> => OpenWidgetAsync(new TWidget(), root, viewKey, parent, options);
+        public async UniTask<TWidget> OpenWidgetAsync<TWidget, TRoot>(TWidget model, TRoot root, object viewKey, IUIViewRoot parent, UIOptions? options = null)
+            where TWidget : IUIModel<IUIViewModel>
+            where TRoot : IUIModel<IUIViewModel>
         {
             if (model == null) throw new ArgumentNullException(nameof(model));
-            if (viewKey == null) throw new ArgumentNullException(nameof(viewKey));
+            if (_models.Contains(model)) throw new InvalidOperationException($"Widget {typeof(TWidget).Name} is already exist!");
+            if (root == null) throw new ArgumentNullException(nameof(root));
             if (parent == null) throw new ArgumentNullException(nameof(parent));
             
             _preprocessor.Preprocess(model);
             
-            //TODO
+            var (view, disposable) = await PrepareView(model, viewKey, parent.Container);
+            RegisterWidget(model, root, view, viewKey, disposable, options);
+            await Show(model);
             
             return model;
         }
 
         public void CloseWidget<T>(T model) where T : IUIModel<IUIViewModel> => CloseWidgetAsync(model).Forget();
 
-        public UniTask CloseWidgetAsync<T>(T model) where T : IUIModel<IUIViewModel>
+        public async UniTask CloseWidgetAsync<T>(T model) where T : IUIModel<IUIViewModel>
         {
+            if (model == null) throw new ArgumentNullException(nameof(model));
+            if (!_models.Contains(model)) throw new InvalidOperationException($"Widget {typeof(T).Name} is not found!");
             
+            await Hide(model);
+            _disposables[model].Dispose();
+            UnregisterWidget(model);
         }
 
-        private void Register<T>(T model, GameObject view, Action dispose, UIOptions? options) where T : IUIModel<IUIViewModel>
+        private void Register<T>(T model, GameObject view, object viewKey, IDisposable disposable, UIOptions? options) where T : IUIModel<IUIViewModel>
         {
+            _keys[model] = viewKey ?? model.DefaultViewKey;
             _views[model] = view;
-            _disposings[model] = dispose;
+            _disposables[model] = disposable;
             _options[model] = options ?? model.DefaultOptions;
             _states[model] = false;
             _models.Add(model);
@@ -124,36 +138,61 @@ namespace ED.UI
 
         private void Unregister<T>(T model) where T : IUIModel<IUIViewModel>
         {
+            _keys.Remove(model);
             _views.Remove(model);
-            _disposings.Remove(model);
+            _disposables.Remove(model);
             _options.Remove(model);
             _states.Remove(model);
             _models.Remove(model);
         }
 
-        private async UniTask<(GameObject view, Action dispose)> PrepareView<T>(T model, object viewKey, Transform parent) where T : IUIModel<IUIViewModel>
+        private void RegisterWidget<TWidget, TRoot>(TWidget model, TRoot root, GameObject view, object viewKey, IDisposable disposable, UIOptions? options)
+            where TWidget : IUIModel<IUIViewModel>
+            where TRoot : IUIModel<IUIViewModel>
         {
-            Action dispose = default;
+            Register(model, view, viewKey, disposable, options);
+            if (!_childrens.TryGetValue(root, out var children))
+                _childrens[root] = children = new List<IUIModel<IUIViewModel>>();
+            _roots[model] = root;
+            children.Add(model);
+        }
+
+        private void UnregisterWidget<T>(T model) where T : IUIModel<IUIViewModel>
+        {
+            Unregister(model);
+            var root = _roots[model];
+            if (_childrens.TryGetValue(root, out var children))
+            {
+                children.Remove(model);
+                if (children.Count == 0) _childrens.Remove(root);
+            }
+            _roots.Remove(model);
+        }
+
+        private async UniTask<(GameObject view, IDisposable disposables)> PrepareView<T>(T model, object viewKey, Transform parent) where T : IUIModel<IUIViewModel>
+        {
+            viewKey ??= model.DefaultViewKey;
             var (viewHandler, view) = await _pool.Get(viewKey);
             view.transform.SetParent(parent);
             view.transform.localScale = Vector3.one;
             view.transform.SetAsLastSibling();
-            using var listHandler = ListPool<IUIView>.Get(out var components);
+            using var componentsHandler = ListPool<IUIView>.Get(out var components);
             view.GetComponents(components);
+            DisposableCollection disposables = new();
             foreach (var component in components)
             {
-                var binder = BinderFactory.CreateComposite(component, model.ViewModel);
+                var binder = BinderFactory.CreateComposite(component, model.model);
+                disposables.Add(binder.ToDisposable());
                 binder.Bind();
-                dispose += binder.Unbind;
             }
-            dispose += viewHandler.Dispose;
+            disposables.Add(viewHandler);
             model.OnBind();
-            return (view, dispose);
+            return (view, disposables);
         }
 
-        private async UniTask Show<T>(object model)
+        private async UniTask Show<T>(T model) where T : IUIModel<IUIViewModel>
         {
-            var needAnimation = _options[model].HasFlag(UIOptions.ShowingAnimation);
+            var needAnimation = _options[model].HasFlag(UIOptions.ShowAnimation);
             using var componentsHandler = ListPool<IUIView>.Get(out var components);
             using var tasksHandler = ListPool<UniTask>.Get(out var tasks);
             _views[model].GetComponents(components);
@@ -163,9 +202,9 @@ namespace ED.UI
             _states[model] = true;
         }
 
-        private async UniTask Hide(object model)
+        private async UniTask Hide<T>(T model) where T : IUIModel<IUIViewModel>
         {
-            var needAnimation = _options[model].HasFlag(UIOptions.HidingAnimation);
+            var needAnimation = _options[model].HasFlag(UIOptions.HideAnimation);
             using var componentsHandler = ListPool<IUIView>.Get(out var components);
             using var tasksHandler = ListPool<UniTask>.Get(out var tasks);
             _views[model].GetComponents(components);
@@ -175,18 +214,32 @@ namespace ED.UI
             _states[model] = false;
         }
 
-        private UniTask Transite(object toHide, object toShow)
+        private async UniTask Transite<T1, T2>(T1 toHide, T2 toShow) where T1 : IUIModel<IUIViewModel> where T2 : IUIModel<IUIViewModel>
         {
+            OnTransitionStateChanged?.Invoke(true);
             UniTask hiding = UniTask.CompletedTask;
             UniTask showing = UniTask.CompletedTask;
             if (toHide != null && _states[toHide]) hiding = Hide(toHide);
             if (toShow != null && !_states[toShow]) showing = Show(toHide);
-            return UniTask.WhenAll(hiding, showing);
+            await UniTask.WhenAll(hiding, showing);
+            OnTransitionStateChanged?.Invoke(false);
         }
 
         public void Dispose()
         {
+            foreach(var disposable in _disposables.Values) disposable.Dispose();
+            foreach(var childrenList in _childrens.Values) childrenList.Clear();
             
+            _keys.Clear();
+            _views.Clear();
+            _disposables.Clear();
+            _options.Clear();
+            _states.Clear();
+            _models.Clear();
+            _childrens.Clear();
+            _roots.Clear();
+            
+            _pool.Dispose();
         }
     }
 }

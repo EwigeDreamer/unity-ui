@@ -7,12 +7,12 @@ namespace ED.UI
     {
         None = 0,
         
-        ShowingAnimation = 1 << 0,
-        HidingAnimation = 1 << 1,
+        ShowAnimation = 1 << 0,
+        HideAnimation = 1 << 1,
         IsHideable = 1 << 2,
         HidePrevious = 1 << 3,
         
-        Animation = ShowingAnimation | HidingAnimation,
+        Animation = ShowAnimation | HideAnimation,
         Hiding = IsHideable | HidePrevious,
         Default = Animation | Hiding,
     }
