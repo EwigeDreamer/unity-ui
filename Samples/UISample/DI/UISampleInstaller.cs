@@ -5,7 +5,7 @@ namespace ED.UI.Samples
 {
     public class UISampleInstaller : MonoInstaller, IInitializable
     {
-        [SerializeField] private IUIViewRoot _uiRoot;
+        [SerializeField] private UIRoot _uiRoot;
         
         public override void InstallBindings()
         {
@@ -18,8 +18,8 @@ namespace ED.UI.Samples
         private void BindUIService()
         {
             var preprocessor = new UIZenjectPreprocessor(Container);
-            var pool = new UIViewPool();
-            var uiService = new UIService(preprocessor, pool, _uiRoot);
+            var pool = new UIViewPool(_uiRoot.transform);
+            var uiService = new UIService(preprocessor, pool, _uiRoot.Common);
             Container.BindInterfacesTo(uiService.GetType()).FromInstance(uiService).AsSingle();
         }
 
@@ -30,7 +30,7 @@ namespace ED.UI.Samples
 
         public void Initialize()
         {
-
+            Container.Resolve<UISampleController>().Start();
         }
     }
 }

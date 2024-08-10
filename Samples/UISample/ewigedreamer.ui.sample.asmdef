@@ -2,9 +2,12 @@
     "name": "ewigedreamer.ui.sample",
     "rootNamespace": "ED",
     "references": [
+        "ewigedreamer.mvvm",
         "ewigedreamer.ui",
         "Zenject",
-        "UniTask"
+        "UniRx",
+        "UniTask",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

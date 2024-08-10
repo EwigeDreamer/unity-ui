@@ -10,12 +10,19 @@ namespace ED.UI.Samples
     {
         private readonly Dictionary<object, ObjectPool<GameObject>> _poolDict = new();
         private readonly List<Transform> _poolContainers = new();
+        private readonly Transform _root;
+
+        public UIViewPool(Transform root)
+        {
+            _root = root;
+        }
         
-        public async UniTask<(IDisposable handler, GameObject view)> Get(object key)
+        public async UniTask<(IDisposable handler, GameObject view)> Get(object key, Transform parent)
         {
             if (!_poolDict.TryGetValue(key, out var pool))
                 _poolDict[key] = pool = await CreatePool(key);
             var handler = pool.Get(out var view);
+            view.transform.SetParent(parent, false);
             return (handler, view);
         }
 
@@ -28,24 +35,17 @@ namespace ED.UI.Samples
             if (prefab == null)
                 throw new InvalidOperationException($"{nameof(prefab)} is null!");
             return new ObjectPool<GameObject>(
-                () => UnityEngine.Object.Instantiate(prefab),
-                view =>
-                {
-                    view.transform.SetParent(null);
-                    view.SetActive(true);
-                },
-                view =>
-                {
-                    view.transform.SetParent(container);
-                    view.SetActive(false);
-                },
+                () => UnityEngine.Object.Instantiate(prefab, container),
+                view => view.transform.SetParent(null, false),
+                view => view.transform.SetParent(container, false),
                 UnityEngine.Object.Destroy);
         }
 
         private Transform CreatePoolContainer(string name)
         {
             var container = new GameObject(name).transform;
-            UnityEngine.Object.DontDestroyOnLoad(container);
+            container.SetParent(_root, false);
+            container.gameObject.SetActive(false);
             _poolContainers.Add(container);
             return container;
         }

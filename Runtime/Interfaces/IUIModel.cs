@@ -3,11 +3,12 @@ using UnityEngine.Events;
 
 namespace ED.UI
 {
-    public interface IUIModel<out TViewModel> where TViewModel : IUIViewModel
+    public interface IUIModel : IDisposable
     {
         object DefaultViewKey { get; }
         UIOptions DefaultOptions { get; }
-        TViewModel model { get; }
-        void OnBind();
+        object ViewModel { get; }
+        void Awake();
+        void Start();
     }
 }

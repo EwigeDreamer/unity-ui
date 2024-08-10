@@ -6,6 +6,6 @@ namespace ED.UI
 {
     public interface IUIViewPool : IDisposable
     {
-        UniTask<(IDisposable handler, GameObject view)> Get(object key);
+        UniTask<(IDisposable handler, GameObject view)> Get(object key, Transform parent);
     }
 }

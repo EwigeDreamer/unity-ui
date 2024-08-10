@@ -11,7 +11,7 @@ namespace ED.UI.Samples
             Container = container;
         }
         
-        public void Preprocess<T>(T model) where T : IUIModel<IUIViewModel>
+        public void Preprocess<T>(T model) where T : IUIModel
         {
             Container.Inject(model);
         }

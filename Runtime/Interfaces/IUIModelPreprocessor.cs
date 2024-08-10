@@ -5,6 +5,6 @@ namespace ED.UI
     /// </summary>
     public interface IUIModelPreprocessor
     {
-        void Preprocess<T>(T model) where T : IUIModel<IUIViewModel>;
+        void Preprocess<T>(T model) where T : IUIModel;
     }
 }
