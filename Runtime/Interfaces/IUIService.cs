@@ -30,5 +30,7 @@ namespace ED.UI
         
         public void Close<T>(T model) where T : IUIModel;
         public UniTask CloseAsync<T>(T model) where T : IUIModel;
+        void CloseWidget<T>(T model) where T : IUIModel;
+        UniTask CloseWidgetAsync<T>(T model) where T : IUIModel;
     }
 }
