@@ -1,10 +1,11 @@
 {
-    "name": "ewigedreamer.ui",
-    "rootNamespace": "",
+    "name": "ewigedreamer.ui.sample",
+    "rootNamespace": "ED",
     "references": [
-        "ewigedreamer.additional",
-        "ewigedreamer.extensions",
-        "UniTask"
+        "ewigedreamer.ui",
+        "UniRx",
+        "UniTask",
+        "UniTask.DOTween"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
