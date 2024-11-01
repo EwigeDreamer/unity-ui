@@ -6,12 +6,12 @@ using UnityEngine.UI;
 
 namespace ED.UI.Samples
 {
-    public class Window1 : BaseUIView<Window1Model>
+    public class Window2 : BaseUIView<Window2Model>
     {
         [SerializeField] private Button _closeButton;
         [SerializeField] private Button _openNextButton;
         
-        public override IDisposable Bind(Window1Model viewModel)
+        public override IDisposable Bind(Window2Model viewModel)
         {
             CompositeDisposable disposables = new();
             
