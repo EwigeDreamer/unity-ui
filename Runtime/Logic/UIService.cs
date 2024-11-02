@@ -5,7 +5,6 @@ using System.Threading;
 using Components;
 using Cysharp.Threading.Tasks;
 using ED.Additional.Collections;
-using ED.Extensions.Unity;
 using Enums;
 using UnityEngine;
 
@@ -60,11 +59,12 @@ namespace ED.UI
             if (_models.Contains(viewModel))
                 throw new InvalidOperationException($"ViewModel {typeof(TViewModel).Name} is already registered");
 
+            await UniTask.WaitWhile(() => IsInProgress, cancellationToken: cancellationToken);
+            if (cancellationToken.IsCancellationRequested) return viewModel;
 
             try
             {
-                IsInProgress = true;
-                _canvas.SetInteractable(false);
+                SetInProgress(true);
 
                 rootKey ??= UIRootKey.Main;
                 options ??= UIOptions.Default;
@@ -84,8 +84,7 @@ namespace ED.UI
             }
             finally
             {
-                _canvas.ToActual()?.SetInteractable(true);
-                IsInProgress = false;
+                SetInProgress(false);
             }
         }
 
@@ -95,23 +94,41 @@ namespace ED.UI
                 throw new ArgumentNullException(nameof(viewModel));
             if (!_models.Contains(viewModel))
                 throw new InvalidOperationException($"ViewModel {typeof(TViewModel).Name} is not registered");
+
+            await UniTask.WaitWhile(() => IsInProgress, cancellationToken: cancellationToken);
+            if (cancellationToken.IsCancellationRequested) return;
             
-            var rootKey = _roots[viewModel];
-            var stack = _stacks[rootKey];
-            IUIViewModel nextViewModel = null;
-            if (ReferenceEquals(stack.Peek(), viewModel))
+            try
             {
-                stack.Pop();
-                stack.TryPeek(out nextViewModel);
+                SetInProgress(true);
+
+                var rootKey = _roots[viewModel];
+                var stack = _stacks[rootKey];
+                IUIViewModel nextViewModel = null;
+                if (ReferenceEquals(stack.Peek(), viewModel))
+                {
+                    stack.Pop();
+                    stack.TryPeek(out nextViewModel);
+                }
+                else
+                {
+                    stack.Remove(viewModel);
+                }
+
+                await TransiteAsync(viewModel, nextViewModel, cancellationToken);
+                _disposables[viewModel].Dispose();
+                Unregister(viewModel);
             }
-            else
+            finally
             {
-                stack.Remove(viewModel);
+                SetInProgress(false);
             }
-            
-            await TransiteAsync(viewModel, nextViewModel, cancellationToken);
-            _disposables[viewModel].Dispose();
-            Unregister(viewModel);
+        }
+
+        private void SetInProgress(bool value)
+        {
+            _canvas.SetInteractable(!value);
+            IsInProgress = value;
         }
 
         private async UniTask TransiteAsync(IUIViewModel toHide, IUIViewModel toShow, CancellationToken cancellationToken = default)

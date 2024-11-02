@@ -1,0 +1,20 @@
+{
+    "name": "ewigedreamer.ui.sample.windows",
+    "rootNamespace": "ED",
+    "references": [
+        "ewigedreamer.ui",
+        "UniRx",
+        "UniTask",
+        "DOTween.Modules",
+        "UniTask.DOTween"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
