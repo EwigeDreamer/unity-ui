@@ -22,7 +22,7 @@ namespace ED.UI
         private readonly Dictionary<object, UIRootKey> _roots = new();
         private readonly Dictionary<object, UIOptions> _options = new();
         private readonly Dictionary<object, bool> _states = new();
-        private readonly IReadOnlyDictionary<UIRootKey, StackList<IUIViewModel>> _stacks;
+        private readonly Dictionary<UIRootKey, StackList<IUIViewModel>> _stacks;
         
         public bool IsInProgress { get; private set; }
 
@@ -37,19 +37,26 @@ namespace ED.UI
             _pool = new UIPool(loader, canvas.transform);
             _stacks = UIRootKey.Values.ToDictionary(a => a, _ => new StackList<IUIViewModel>());
         }
-        
+
+        public bool Contains<TViewModel>(TViewModel viewModel) where TViewModel : IUIViewModel
+        {
+            return _models.Contains(viewModel);
+        }
+
         public UniTask<TViewModel> OpenAsync<TViewModel, TView>(
             UIRootKey rootKey = null,
             UIOptions? options = null,
+            Action<TViewModel> onInitCallback = null,
             CancellationToken cancellationToken = default)
             where TViewModel : class, IUIViewModel, new()
             where TView : MonoBehaviour, IUIView<TViewModel>
-            => OpenAsync<TViewModel, TView>(new TViewModel(), rootKey, options, cancellationToken);
+            => OpenAsync<TViewModel, TView>(new TViewModel(), rootKey, options, onInitCallback, cancellationToken);
 
         public async UniTask<TViewModel> OpenAsync<TViewModel, TView>(
             TViewModel viewModel,
             UIRootKey rootKey = null,
             UIOptions? options = null,
+            Action<TViewModel> onInitCallback = null,
             CancellationToken cancellationToken = default)
             where TViewModel : class, IUIViewModel
             where TView : MonoBehaviour, IUIView<TViewModel>
@@ -77,6 +84,7 @@ namespace ED.UI
                 stack.Push(viewModel);
                 if (cancellationToken.IsCancellationRequested) return viewModel;
                 
+                onInitCallback?.Invoke(viewModel);
                 await TransiteAsync(prevViewModel, viewModel, cancellationToken);
                 if (cancellationToken.IsCancellationRequested) return viewModel;
 
@@ -200,6 +208,14 @@ namespace ED.UI
         public void Dispose()
         {
             _pool.Dispose();
+            _models.Clear();
+            _objects.Clear();
+            _views.Clear();
+            _disposables.Clear();
+            _options.Clear();
+            _roots.Clear();
+            _states.Clear();
+            _stacks.Clear();
         }
     }
 }
