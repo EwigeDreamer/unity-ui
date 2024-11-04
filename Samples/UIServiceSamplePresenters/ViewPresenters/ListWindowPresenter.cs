@@ -11,13 +11,16 @@ namespace ED.UI.Samples
         private readonly ListWindowModel _model;
         private readonly CompositeDisposable _disposables = new();
         
-        public ListWindowPresenter(IUIService service)
+        private readonly OverlayMessagePresenter _overlayMessagePresenter;
+        
+        public ListWindowPresenter(IUIService service, OverlayMessagePresenter overlayMessagePresenter)
         {
             _service = service;
             _model = new ListWindowModel();
             _model.Close
                 .Subscribe(_ => Close())
                 .AddTo(_disposables);
+            _overlayMessagePresenter = overlayMessagePresenter;
         }
 
         public void Open()
@@ -26,13 +29,13 @@ namespace ED.UI.Samples
 
             void Init(ListWindowModel model)
             {
-                
+                //TODO
             }
         }
 
         public void Close()
         {
-            _service.CloseAsync(_model);
+            _service.CloseAsync(_model).Forget();
         }
         
         public void Dispose()
