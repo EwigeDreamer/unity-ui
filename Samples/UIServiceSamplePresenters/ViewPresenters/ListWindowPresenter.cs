@@ -8,19 +8,27 @@ namespace ED.UI.Samples
     public class ListWindowPresenter : IDisposable
     {
         private readonly IUIService _service;
-        private readonly ListWindowModel _model;
+        private readonly ListWindowModel _model = new();
         private readonly CompositeDisposable _disposables = new();
-        
-        private readonly OverlayMessagePresenter _overlayMessagePresenter;
+        private readonly List<ListItemModel> _items = new();
         
         public ListWindowPresenter(IUIService service, OverlayMessagePresenter overlayMessagePresenter)
         {
             _service = service;
-            _model = new ListWindowModel();
             _model.Close
                 .Subscribe(_ => Close())
                 .AddTo(_disposables);
-            _overlayMessagePresenter = overlayMessagePresenter;
+
+            int count = 10;
+            for (int i = 0; i < count; ++i)
+            {
+                var number = i + 1;
+                var item = new ListItemModel();
+                item.Label.Value = $"Item {number}";
+                item.Click
+                    .Subscribe(_ => overlayMessagePresenter.Open($"This is item number {number}"))
+                    .AddTo(_disposables);
+            }
         }
 
         public void Open()
@@ -29,7 +37,11 @@ namespace ED.UI.Samples
 
             void Init(ListWindowModel model)
             {
-                //TODO
+                model.Container.TryGetValue(out var container);
+                foreach (var item in _items)
+                {
+                    _service.OpenWidgetAsync<ListItemModel, ListItem>(item, model, container).Forget();
+                }
             }
         }
 

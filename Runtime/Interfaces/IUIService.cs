@@ -28,8 +28,32 @@ namespace ED.UI
             CancellationToken cancellationToken = default)
             where TViewModel : class, IUIViewModel
             where TView : MonoBehaviour, IUIView<TViewModel>;
+
+        UniTask<TViewModel> OpenWidgetAsync<TViewModel, TView>(
+            IUIViewModel parent,
+            Transform container,
+            UIOptions? options = null,
+            Action<TViewModel> onInitCallback = null,
+            CancellationToken cancellationToken = default)
+            where TViewModel : class, IUIViewModel, new()
+            where TView : MonoBehaviour, IUIView<TViewModel>;
+
+        UniTask<TViewModel> OpenWidgetAsync<TViewModel, TView>(
+            TViewModel viewModel,
+            IUIViewModel parent,
+            Transform container,
+            UIOptions? options = null,
+            Action<TViewModel> onInitCallback = null,
+            CancellationToken cancellationToken = default)
+            where TViewModel : class, IUIViewModel
+            where TView : MonoBehaviour, IUIView<TViewModel>;
         
         UniTask CloseAsync<TViewModel>(
+            TViewModel viewModel,
+            CancellationToken cancellationToken = default)
+            where TViewModel : IUIViewModel;
+        
+        UniTask CloseWidgetAsync<TViewModel>(
             TViewModel viewModel,
             CancellationToken cancellationToken = default)
             where TViewModel : IUIViewModel;
