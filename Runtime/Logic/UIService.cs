@@ -17,16 +17,16 @@ namespace ED.UI
         private readonly UIPool _pool;
         
         private readonly HashSet<IUIViewModel> _models = new();
-        private readonly Dictionary<object, GameObject> _objects = new();
-        private readonly Dictionary<object, IUIAppearable> _views = new();
-        private readonly Dictionary<object, IDisposable> _disposables = new();
-        private readonly Dictionary<object, UIRootKey> _roots = new();
-        private readonly Dictionary<object, UIOptions> _options = new();
-        private readonly Dictionary<object, bool> _states = new();
+        private readonly Dictionary<IUIViewModel, GameObject> _objects = new();
+        private readonly Dictionary<IUIViewModel, IUIAppearable> _views = new();
+        private readonly Dictionary<IUIViewModel, IDisposable> _disposables = new();
+        private readonly Dictionary<IUIViewModel, UIRootKey> _roots = new();
+        private readonly Dictionary<IUIViewModel, UIOptions> _options = new();
+        private readonly Dictionary<IUIViewModel, bool> _states = new();
+        private readonly Dictionary<IUIViewModel, List<IUIViewModel>> _children = new();
+        private readonly Dictionary<IUIViewModel, IUIViewModel> _parents = new();
 
         private readonly Dictionary<UIRootKey, StackList<IUIViewModel>> _stacks;
-        private readonly Dictionary<object, List<IUIViewModel>> _children = new();
-        private readonly Dictionary<object, IUIViewModel> _parents = new();
         
         public bool IsInProgress { get; private set; }
 
@@ -198,8 +198,10 @@ namespace ED.UI
          {
              if (!_children.TryGetValue(viewModel, out var children)) return UniTask.CompletedTask;
              using var handler1 = ListPool<UniTask>.Get(out var tasks);
-             foreach(var child in children)
+             int i = children.Count;
+             while (i --> 0)
              {
+                 var child = children[i];
                  _options[child] &= ~UIOptions.Animation;
                  tasks.Add(CloseWidgetAsync(child, cancellationToken));
              }
@@ -317,6 +319,8 @@ namespace ED.UI
             _roots.Clear();
             _states.Clear();
             _stacks.Clear();
+            _children.Clear();
+            _parents.Clear();
         }
     }
 }

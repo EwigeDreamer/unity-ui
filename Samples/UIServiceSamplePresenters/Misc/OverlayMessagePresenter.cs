@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Enums;
 using UniRx;
 
 namespace ED.UI.Samples
@@ -19,7 +20,7 @@ namespace ED.UI.Samples
             model.Message.Value = message;
             model.Close.Subscribe(Close).AddTo(disposables);
             model.AddTo(disposables);
-            _service.OpenAsync<OverlayMessageModel, OverlayMessage>(model).Forget();
+            _service.OpenAsync<OverlayMessageModel, OverlayMessage>(model, UIRootKey.Overlay).Forget();
             
             async void Close(Unit _)
             {

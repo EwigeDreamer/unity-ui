@@ -11,6 +11,7 @@ namespace ED.UI
     {
         private readonly Dictionary<Type, ObjectPool<GameObject>> _poolDict = new();
         private readonly List<Transform> _poolContainers = new();
+        private readonly HashSet<Type> _typesInProgress = new();
         private readonly IUIViewLoader _loader;
         private readonly Transform _root;
 
@@ -22,6 +23,8 @@ namespace ED.UI
         
         public async UniTask<(IDisposable handler, GameObject view)> GetAsync(Type viewType, Transform parent, CancellationToken cancellationToken = default)
         {
+            await UniTask.WaitWhile(() => _typesInProgress.Contains(viewType), cancellationToken: cancellationToken);
+            if (cancellationToken.IsCancellationRequested) return (null, null);
             if (!_poolDict.TryGetValue(viewType, out var pool))
                 _poolDict[viewType] = pool = await CreatePool(viewType, cancellationToken);
             if (cancellationToken.IsCancellationRequested) return (null, null);
@@ -33,9 +36,11 @@ namespace ED.UI
 
         private async UniTask<ObjectPool<GameObject>> CreatePool(Type viewType, CancellationToken cancellationToken = default)
         {
+            _typesInProgress.Add(viewType);
             var container = CreatePoolContainer($"UI_POOL_CONTAINER <{viewType.Name}>");
             var prefab = await _loader.LoadViewAsync(viewType, cancellationToken);
             if (prefab == null) throw new InvalidOperationException($"{nameof(prefab)} is null!");
+            _typesInProgress.Remove(viewType);
             return new ObjectPool<GameObject>(
                 () => UnityEngine.Object.Instantiate(prefab, container),
                 view => { },

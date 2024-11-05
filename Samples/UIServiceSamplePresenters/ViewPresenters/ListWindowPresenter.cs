@@ -24,10 +24,11 @@ namespace ED.UI.Samples
             {
                 var number = i + 1;
                 var item = new ListItemModel();
-                item.Label.Value = $"Item {number}";
+                item.Label.Value = $"Item number {number}";
                 item.Click
                     .Subscribe(_ => overlayMessagePresenter.Open($"This is item number {number}"))
                     .AddTo(_disposables);
+                _items.Add(item);
             }
         }
 
@@ -35,12 +36,14 @@ namespace ED.UI.Samples
         {
             _service.OpenAsync<ListWindowModel, ListWindow>(_model, onInitCallback: Init).Forget();
 
-            void Init(ListWindowModel model)
+            async void Init(ListWindowModel model)
             {
-                model.Container.TryGetValue(out var container);
-                foreach (var item in _items)
+                if (model.Container.TryGetValue(out var container))
                 {
-                    _service.OpenWidgetAsync<ListItemModel, ListItem>(item, model, container).Forget();
+                    foreach (var item in _items)
+                    {
+                        await _service.OpenWidgetAsync<ListItemModel, ListItem>(item, model, container);
+                    }
                 }
             }
         }
