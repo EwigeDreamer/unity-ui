@@ -12,6 +12,23 @@
     "interface",
     "ui"
   ],
+  "samples": [
+    {
+      "displayName": "Windows",
+      "description": "Contains sample of UIService usage with windows",
+      "path": "Samples~/UIServiceSampleWindows"
+    },
+    {
+      "displayName": "Overlay Messages",
+      "description": "Contains sample of UIService usage with overlay messages",
+      "path": "Samples~/UIServiceSampleOverlay"
+    },
+    {
+      "displayName": "Presenters",
+      "description": "Contains sample of UIService usage with window, widgets inside window and overlay messages",
+      "path": "Samples~/UIServiceSamplePresenters"
+    }
+  ],
   "author": {
     "name": "Pavel Sborshchikov",
     "email": "ewigedreamer@gmail.com",
