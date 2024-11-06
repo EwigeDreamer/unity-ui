@@ -50,9 +50,14 @@ namespace ED.UI
 
         private Transform CreatePoolContainer(string name)
         {
-            var container = new GameObject(name).transform;
+            var go = new GameObject(name);
+            var container = go.AddComponent<RectTransform>();
             container.SetParent(_root, false);
             container.gameObject.SetActive(false);
+            container.anchorMin = Vector2.zero;
+            container.anchorMax = Vector2.one;
+            container.offsetMin = Vector2.zero;
+            container.offsetMax = Vector2.zero;
             _poolContainers.Add(container);
             return container;
         }

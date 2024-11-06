@@ -5,6 +5,7 @@ using System.Threading;
 using Components;
 using Cysharp.Threading.Tasks;
 using ED.Additional.Collections;
+using ED.Extensions.System;
 using Enums;
 using UnityEngine;
 using UnityEngine.Pool;
@@ -70,8 +71,11 @@ namespace ED.UI
             if (_models.Contains(viewModel))
                 throw new InvalidOperationException($"ViewModel {typeof(TViewModel).Name} is already registered");
 
-            await UniTask.WaitWhile(() => IsInProgress, cancellationToken: cancellationToken);
-            if (cancellationToken.IsCancellationRequested) return viewModel;
+            using var tokenHandler = CancellationTokenUtility.Combine(out var combinedCancellationToken,
+                cancellationToken, Application.exitCancellationToken);
+
+            await UniTask.WaitWhile(() => IsInProgress, cancellationToken: combinedCancellationToken);
+            if (combinedCancellationToken.IsCancellationRequested) return viewModel;
 
             try
             {
@@ -83,14 +87,14 @@ namespace ED.UI
                 var prevViewModel = stack.Count > 0 ? stack.Peek() : null;
                 var container = _canvas.Roots[rootKey];
                 
-                var (go, view, disposable) = await PrepareViewAsync<TViewModel, TView>(viewModel, container, cancellationToken);
+                var (go, view, disposable) = await PrepareViewAsync<TViewModel, TView>(viewModel, container, combinedCancellationToken);
                 Register(viewModel, go, view, disposable, rootKey, options.Value);
                 stack.Push(viewModel);
-                if (cancellationToken.IsCancellationRequested) return viewModel;
+                if (combinedCancellationToken.IsCancellationRequested) return viewModel;
                 
                 onInitCallback?.Invoke(viewModel);
-                await TransiteAsync(prevViewModel, viewModel, cancellationToken);
-                if (cancellationToken.IsCancellationRequested) return viewModel;
+                await TransiteAsync(prevViewModel, viewModel, combinedCancellationToken);
+                if (combinedCancellationToken.IsCancellationRequested) return viewModel;
 
                 return viewModel;
             }
@@ -132,14 +136,17 @@ namespace ED.UI
                 throw new InvalidOperationException($"ViewModel {parent.GetType().Name} is not registered");
 
             options ??= UIOptions.None;
+
+            using var tokenHandler = CancellationTokenUtility.Combine(out var combinedCancellationToken,
+                cancellationToken, Application.exitCancellationToken);
             
-            var (go, view, disposable) = await PrepareViewAsync<TViewModel, TView>(viewModel, container, cancellationToken);
+            var (go, view, disposable) = await PrepareViewAsync<TViewModel, TView>(viewModel, container, combinedCancellationToken);
             RegisterWidget(viewModel, parent, go, view, disposable, options.Value);
-            if (cancellationToken.IsCancellationRequested) return viewModel;
+            if (combinedCancellationToken.IsCancellationRequested) return viewModel;
             
             onInitCallback?.Invoke(viewModel);
-            await ShowAsync(viewModel, cancellationToken);
-            if (cancellationToken.IsCancellationRequested) return viewModel;
+            await ShowAsync(viewModel, combinedCancellationToken);
+            if (combinedCancellationToken.IsCancellationRequested) return viewModel;
 
             return viewModel;
         }
@@ -151,8 +158,11 @@ namespace ED.UI
             if (!_models.Contains(viewModel))
                 throw new InvalidOperationException($"ViewModel {typeof(TViewModel).Name} is not registered");
 
-            await UniTask.WaitWhile(() => IsInProgress, cancellationToken: cancellationToken);
-            if (cancellationToken.IsCancellationRequested) return;
+            using var tokenHandler = CancellationTokenUtility.Combine(out var combinedCancellationToken,
+                cancellationToken, Application.exitCancellationToken);
+
+            await UniTask.WaitWhile(() => IsInProgress, cancellationToken: combinedCancellationToken);
+            if (combinedCancellationToken.IsCancellationRequested) return;
             
             try
             {
@@ -171,8 +181,9 @@ namespace ED.UI
                     stack.Remove(viewModel);
                 }
 
-                await TransiteAsync(viewModel, nextViewModel, cancellationToken);
-                await CloseChildrenAsync(viewModel, cancellationToken);
+                await TransiteAsync(viewModel, nextViewModel, combinedCancellationToken);
+                if (combinedCancellationToken.IsCancellationRequested) return;
+                await CloseChildrenAsync(viewModel, combinedCancellationToken);
                 _disposables[viewModel].Dispose();
                 Unregister(viewModel);
             }
@@ -188,8 +199,11 @@ namespace ED.UI
                 throw new ArgumentNullException(nameof(viewModel));
             if (!_models.Contains(viewModel))
                 throw new InvalidOperationException($"ViewModel {typeof(TViewModel).Name} is not registered");
+
+            using var tokenHandler = CancellationTokenUtility.Combine(out var combinedCancellationToken,
+                cancellationToken, Application.exitCancellationToken);
             
-            await HideAsync(viewModel, cancellationToken);
+            await HideAsync(viewModel, combinedCancellationToken);
             _disposables[viewModel].Dispose();
             UnregisterWidget(viewModel);
         }
