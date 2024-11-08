@@ -71,7 +71,7 @@ namespace ED.UI
             if (_models.Contains(viewModel))
                 throw new InvalidOperationException($"ViewModel {typeof(TViewModel).Name} is already registered");
 
-            using var tokenHandler = CancellationTokenUtility.Combine(out var combinedCancellationToken,
+            using var tokenHandler = CancellationTokenUtility.Combine(false, out var combinedCancellationToken,
                 cancellationToken, Application.exitCancellationToken);
 
             await UniTask.WaitWhile(() => IsInProgress, cancellationToken: combinedCancellationToken);
@@ -137,7 +137,7 @@ namespace ED.UI
 
             options ??= UIOptions.None;
 
-            using var tokenHandler = CancellationTokenUtility.Combine(out var combinedCancellationToken,
+            using var tokenHandler = CancellationTokenUtility.Combine(false, out var combinedCancellationToken,
                 cancellationToken, Application.exitCancellationToken);
             
             var (go, view, disposable) = await PrepareViewAsync<TViewModel, TView>(viewModel, container, combinedCancellationToken);
@@ -158,7 +158,7 @@ namespace ED.UI
             if (!_models.Contains(viewModel))
                 throw new InvalidOperationException($"ViewModel {typeof(TViewModel).Name} is not registered");
 
-            using var tokenHandler = CancellationTokenUtility.Combine(out var combinedCancellationToken,
+            using var tokenHandler = CancellationTokenUtility.Combine(false, out var combinedCancellationToken,
                 cancellationToken, Application.exitCancellationToken);
 
             await UniTask.WaitWhile(() => IsInProgress, cancellationToken: combinedCancellationToken);
@@ -200,7 +200,7 @@ namespace ED.UI
             if (!_models.Contains(viewModel))
                 throw new InvalidOperationException($"ViewModel {typeof(TViewModel).Name} is not registered");
 
-            using var tokenHandler = CancellationTokenUtility.Combine(out var combinedCancellationToken,
+            using var tokenHandler = CancellationTokenUtility.Combine(false, out var combinedCancellationToken,
                 cancellationToken, Application.exitCancellationToken);
             
             await HideAsync(viewModel, combinedCancellationToken);
