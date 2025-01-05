@@ -1,6 +1,11 @@
-using Components;
 using Cysharp.Threading.Tasks;
-using Enums;
+using ED.UI.Components;
+using ED.UI.Enums;
+using ED.UI.Interfaces;
+using ED.UI.Logic;
+using ED.UI.Samples.Misc;
+using ED.UI.Samples.ViewModels;
+using ED.UI.Samples.Views;
 using UniRx;
 using UnityEngine;
 

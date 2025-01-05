@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
+using ED.UI.Interfaces;
 using UnityEngine;
 
 namespace ED.UI.Samples.Base

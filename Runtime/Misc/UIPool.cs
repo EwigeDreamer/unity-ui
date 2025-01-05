@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using ED.UI.Interfaces;
 using UnityEngine;
 using UnityEngine.Pool;
 
-namespace ED.UI
+namespace ED.UI.Misc
 {
     internal class UIPool
     {

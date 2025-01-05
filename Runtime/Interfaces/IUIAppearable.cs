@@ -1,7 +1,7 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
 
-namespace ED.UI
+namespace ED.UI.Interfaces
 {
     public interface IUIAppearable
     {

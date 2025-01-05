@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using Enums;
+using ED.UI.Enums;
 using UnityEngine;
 
-namespace Components
+namespace ED.UI.Components
 {
     [RequireComponent(typeof(Canvas))]
     [RequireComponent(typeof(CanvasGroup))]

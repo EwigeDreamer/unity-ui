@@ -1,6 +1,6 @@
 using System;
 
-namespace ED.UI
+namespace ED.UI.Misc
 {
     public class UIPropertyProvider<TValue> : IDisposable
     {

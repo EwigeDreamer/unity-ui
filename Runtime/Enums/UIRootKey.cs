@@ -1,6 +1,6 @@
 using ED.Additional.Utilities;
 
-namespace Enums
+namespace ED.UI.Enums
 {
     public sealed partial class UIRootKey : TypeSafeValueEnum<int, UIRootKey>
     {

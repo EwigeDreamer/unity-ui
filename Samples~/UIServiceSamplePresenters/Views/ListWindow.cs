@@ -1,5 +1,6 @@
 using System;
 using ED.UI.Samples.Base;
+using ED.UI.Samples.ViewModels;
 using UniRx;
 using UnityEngine;
 using UnityEngine.UI;

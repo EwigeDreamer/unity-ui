@@ -1,6 +1,6 @@
 using System;
 
-namespace ED.UI
+namespace ED.UI.Enums
 {
     [Flags]
     public enum UIOptions : byte

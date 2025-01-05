@@ -1,4 +1,4 @@
-namespace ED.UI
+namespace ED.UI.Interfaces
 {
     public interface IUIViewModel { }
 }

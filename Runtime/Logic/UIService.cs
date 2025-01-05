@@ -2,15 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Components;
 using Cysharp.Threading.Tasks;
 using ED.Additional.Collections;
 using ED.Extensions.System;
-using Enums;
+using ED.UI.Components;
+using ED.UI.Enums;
+using ED.UI.Interfaces;
+using ED.UI.Misc;
 using UnityEngine;
 using UnityEngine.Pool;
 
-namespace ED.UI
+namespace ED.UI.Logic
 {
     public class UIService : IUIService, IDisposable
     {

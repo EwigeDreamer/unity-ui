@@ -1,9 +1,10 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using ED.UI.Interfaces;
 using UnityEngine;
 
-namespace ED.UI.Samples
+namespace ED.UI.Samples.Misc
 {
     public class UIResourcesLoader : IUIViewLoader
     {

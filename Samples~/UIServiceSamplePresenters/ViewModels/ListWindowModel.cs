@@ -1,8 +1,10 @@
 using System;
+using ED.UI.Interfaces;
+using ED.UI.Misc;
 using UniRx;
 using UnityEngine;
 
-namespace ED.UI.Samples
+namespace ED.UI.Samples.ViewModels
 {
     public class ListWindowModel : IUIViewModel, IDisposable
     {

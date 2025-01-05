@@ -1,6 +1,6 @@
 using System;
 
-namespace ED.UI
+namespace ED.UI.Interfaces
 {
     public interface IUIBindable<TViewModel> where TViewModel : IUIViewModel
     {

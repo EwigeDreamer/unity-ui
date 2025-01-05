@@ -1,10 +1,10 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Enums;
+using ED.UI.Enums;
 using UnityEngine;
 
-namespace ED.UI
+namespace ED.UI.Interfaces
 {
     public interface IUIService
     {

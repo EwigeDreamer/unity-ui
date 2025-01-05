@@ -1,8 +1,8 @@
 {
     "name": "ewigedreamer.ui.sample.windows",
-    "rootNamespace": "ED",
+    "rootNamespace": "ED.UI",
     "references": [
-        "ewigedreamer.ui",
+        "EwigeDreamer.UI",
         "UniRx",
         "UniTask",
         "DOTween.Modules",

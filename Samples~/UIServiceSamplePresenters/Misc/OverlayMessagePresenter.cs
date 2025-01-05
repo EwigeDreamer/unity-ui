@@ -1,8 +1,10 @@
 using Cysharp.Threading.Tasks;
-using Enums;
+using ED.UI.Enums;
+using ED.UI.Interfaces;
+using ED.UI.Samples.ViewModels;
 using UniRx;
 
-namespace ED.UI.Samples
+namespace ED.UI.Samples.Misc
 {
     public class OverlayMessagePresenter
     {

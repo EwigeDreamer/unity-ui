@@ -1,12 +1,10 @@
 {
-    "name": "ewigedreamer.ui.sample.overlay",
-    "rootNamespace": "ED",
+    "name": "EwigeDreamer.UI",
+    "rootNamespace": "ED.UI",
     "references": [
-        "ewigedreamer.ui",
-        "UniRx",
-        "UniTask",
-        "DOTween.Modules",
-        "UniTask.DOTween"
+        "EwigeDreamer.Additional",
+        "EwigeDreamer.Extensions",
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

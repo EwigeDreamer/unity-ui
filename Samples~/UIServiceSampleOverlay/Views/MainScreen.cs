@@ -1,11 +1,13 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using ED.UI.Interfaces;
+using ED.UI.Samples.ViewModels;
 using UniRx;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace ED.UI.Samples
+namespace ED.UI.Samples.Views
 {
     public class MainScreen : MonoBehaviour, IUIView<MainScreenModel>
     {

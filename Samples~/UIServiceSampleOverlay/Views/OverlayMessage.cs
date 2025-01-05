@@ -1,10 +1,11 @@
 using System;
 using ED.UI.Samples.Base;
+using ED.UI.Samples.ViewModels;
 using UniRx;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace ED.UI.Samples
+namespace ED.UI.Samples.Views
 {
     public class OverlayMessage : BaseUIView<OverlayMessageModel>
     {
